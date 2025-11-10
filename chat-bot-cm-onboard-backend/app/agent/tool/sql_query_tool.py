@@ -126,7 +126,7 @@ def sql_query_tool(user_query: list) -> str:
                 SystemMessage(content=system_message2),
                 HumanMessage(content=f"user query: {user_query } + conversation history: {messages}\n\nSQL result: {data}")
             ]
-            llm2 = get_llm(temperature=0.85)
+            llm2 = get_llm(temperature=0)
             response2 = llm2.invoke(messages2)
             print(f" Final bot response:\n{response2}")
             return response2.content

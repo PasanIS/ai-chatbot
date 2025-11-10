@@ -3,7 +3,7 @@ from app.agent.agent_state import AgentState
 from app.agent.llm_manager import get_llm
 
 def chatbot_node(state: AgentState) -> AgentState:
-    llm = get_llm(temperature=0.0)
+    llm = get_llm(temperature=0)
 
     history = state.get("messages", [])
     user_query = state.get("user_query", "")
