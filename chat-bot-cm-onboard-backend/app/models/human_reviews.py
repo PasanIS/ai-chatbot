@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Integer, Column, String, Text, DateTime
-from app.core.database import Base
+from app.db.dbconnection import Base
 
 
 class HumanReview(Base):

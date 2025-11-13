@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey, DECIMAL
-from app.core.database import Base
+from sqlalchemy import Column, Integer, String, ForeignKey, DECIMAL
+from app.db.dbconnection import Base
 
 
 class PurchaseDetails(Base):

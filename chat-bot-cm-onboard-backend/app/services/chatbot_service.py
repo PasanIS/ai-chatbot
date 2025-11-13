@@ -1,47 +1,29 @@
-from datetime import datetime
-from fastapi import HTTPException
 from sqlalchemy.orm import Session as DBSession
-from app.agent.agent_graph import create_graph
-from app.agent.agent_state import AgentState
-from app.models.chat_message import ChatMessage
-from app.models.session import Session as SessionModel
-from langchain.chains import LLMChain
+from app.agents.agent_graph import create_graph
+from app.agents.agent_state import AgentState
+from app.repositories.chatbot_repository import ChatbotRepository
+from app.services.session_services import SessionService
+from langchain_core.messages import HumanMessage, AIMessage
 
 class ChatService:
     def __init__(self, db: DBSession):
         self.db = db
         self.agent = create_graph()
+        self.chat_repo = ChatbotRepository(db)
+        self.session_service = SessionService(db)
 
-    def validate_session(self, session_id: str):
-        if not session_id:
-            raise HTTPException(status_code=400, detail="Session ID is required")
-        session = self.db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
-        if not session:
-            raise HTTPException(status_code=401, detail="Invalid session")
-        if session.expires_at and session.expires_at < datetime.utcnow():
-            raise HTTPException(status_code=401, detail="Session expired")
-
-        session.last_active = datetime.utcnow()
-        self.db.commit()
-        return session
-
-    async def get_chat_history(self, session_id: str, db: DBSession ):
-        messages = (
-            db.query(ChatMessage)
-            .filter(ChatMessage.session_id == session_id)
-            .order_by(ChatMessage.created_at.desc())
-            .limit(10)
-            .all()
-        )
-        return list(reversed(messages))
+    async def get_chat_history(self, session_id: str):
+        return await self.chat_repo.get_chat_history(session_id)
 
     async def process_message(self, session_id: str, message: str):
-        self.validate_session(session_id)
-
-        user_msg = ChatMessage(session_id=session_id, sender="user", content=message)
-        self.db.add(user_msg)
-        self.db.commit()
-        self.db.refresh(user_msg)
+        self.chat_repo.create_message(session_id=session_id, sender="user", content=message)
+        history_models = self.chat_repo.get_chat_history(session_id)
+        formatted_messages = []
+        for m in history_models:
+            if m.sender == "user":
+                formatted_messages.append(HumanMessage(content=m.content))
+            elif m.sender == "bot":
+                formatted_messages.append(AIMessage(content=m.content))
 
         thread_config = {
             "configurable": {
@@ -50,16 +32,6 @@ class ChatService:
             }
         }
 
-        messages = await self.get_chat_history(session_id, self.db)
-
-        formatted_messages = [
-            {
-                "role": "user" if m.sender == "user" else "assistant",
-                "content": m.content
-            }
-            for m in messages
-        ]
-
         initial_agent_state: AgentState = {
             "messages": formatted_messages,
             "user_query": message,
@@ -67,13 +39,9 @@ class ChatService:
             "decision": ""
         }
 
-
         agent_state = await self.agent.ainvoke(initial_agent_state, config=thread_config)
         response = agent_state["reply"]
 
-        bot_msg = ChatMessage(session_id=session_id, sender="bot", content=response)
-        self.db.add(bot_msg)
-        self.db.commit()
-        self.db.refresh(bot_msg)
+        bot_msg = self.chat_repo.create_message(session_id=session_id, sender="bot", content=response)
 
-        return {"reply": response, "saved": True}
+        return {"reply": response, "saved": True, "message": bot_msg}

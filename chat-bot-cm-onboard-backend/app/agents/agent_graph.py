@@ -1,11 +1,10 @@
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import END
 from langgraph.graph import StateGraph
-from app.agent.agent_state import AgentState
-from app.agent.node.chatbot_node import chatbot_node
-from app.agent.node.normal_chat_node import normal_chat_node
-from app.agent.node.tool_caller_node import tool_caller_node
-
+from app.agents.agent_state import AgentState
+from app.agents.nodes.chatbot_node import chatbot_node
+from app.agents.nodes.normal_chat_node import normal_chat_node
+from app.agents.nodes.tool_caller_node import tool_caller_node
 
 def create_graph():
     graphflow = StateGraph(AgentState)
@@ -18,7 +17,6 @@ def create_graph():
             return "casual"
         else:
             return "call_tools"
-
 
     graphflow.add_node("chatbot_node", chatbot_node)
     graphflow.add_node("tool_caller_node", tool_caller_node)
@@ -40,4 +38,13 @@ def create_graph():
 
     memory = MemorySaver()
     graph = graphflow.compile(checkpointer=memory)
+
+
+    image_bytes = graph.get_graph().draw_mermaid_png()
+    with open("agent_workflow_graph.png", "wb") as f:
+        f.write(image_bytes)
+    print("Graph saved as 'agent_workflow_graph.png'")
+    from IPython.display import Image, display
+    display(Image(image_bytes))
+
     return graph

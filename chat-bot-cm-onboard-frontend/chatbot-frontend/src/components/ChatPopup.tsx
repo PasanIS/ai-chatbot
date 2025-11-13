@@ -22,7 +22,7 @@ const ChatPopup: React.FC = () => {
   const [input, setInput] = useState("");
   const [sessionId, setSessionId] = useState<string>("");
   const [isTyping, setIsTyping] = useState(false);
-  const [isPaused, setIsPaused] = useState(false); // Human in the loop interrupt
+  const [isPaused, setIsPaused] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const abortController = useRef<AbortController | null>(null);
@@ -32,13 +32,13 @@ const ChatPopup: React.FC = () => {
     const storedSession = localStorage.getItem("chatSessionId");
     if (storedSession) {
       setSessionId(storedSession);
-      loadChatHistory(storedSession); // Load past 10 messages
+      loadChatHistory(storedSession);
     } else {
       getSessionId();
     }
   }, []);
 
-  // Scroll to bottom
+  // Scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
@@ -95,7 +95,7 @@ const ChatPopup: React.FC = () => {
   const loadChatHistory = async (id: string) => {
     try {
       const res = await axios.get(
-        `http://localhost:8000/api/chat/start/history/${id}`
+        `http://localhost:8000/api/chat/history/${id}`
       );
       if (res.data && res.data.length > 0) {
         const formatted = res.data.map((m: ApiMessage) => ({
@@ -130,7 +130,7 @@ const ChatPopup: React.FC = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:8000/api/chat/start/message",
+        "http://localhost:8000/api/chat/message",
         { message: input, session_id: sessionId }
       );
 

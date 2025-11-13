@@ -1,41 +1,36 @@
-import uuid
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session as DBSession
-from app.core.config import settings
+
 from app.schemas.session import SessionCreate
 from app.models.session import Session as SessionModel
-
+from app.repositories.session_repository import SessionRepository
+from fastapi import HTTPException
 
 class SessionService:
     def __init__(self, db: DBSession):
         self.db = db
+        self.session_repo = SessionRepository(db)
 
-    def create_session(self,session_data: SessionCreate) -> SessionModel:
-        session_id = str(uuid.uuid4())
-        expires_at = datetime.utcnow() + timedelta(hours=settings.SESSION_EXPIRE_HOURS)
-        new_session = SessionModel(
-            session_id=session_id,
-            ip_address=session_data.ip_address,
-            user_agent=session_data.user_agent,
-            expires_at=expires_at
-        )
-        self.db.add(new_session)
-        self.db.commit()
-        self.db.refresh(new_session)
-        return new_session
+    def create_session(self, session_data: SessionCreate) -> SessionModel:
+        return self.session_repo.create_session(session_data)
 
-    def is_session_valid(self, session_id: str) -> bool:
-
+    def validate_session(self, session_id: str) -> SessionModel:
         if not session_id:
-            return False
+            raise HTTPException(status_code=400, detail="Session ID is required")
 
-        session = self.db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
+        session = self.session_repo.get_session_by_id(session_id)
+
         if not session:
-            return False
+            raise HTTPException(status_code=401, detail="Invalid session")
 
         if session.expires_at and session.expires_at < datetime.utcnow():
-            return False
+            raise HTTPException(status_code=401, detail="Session expired")
 
-        session.last_active = datetime.utcnow()
-        self.db.commit()
-        return True
+        return self.session_repo.update_session_activity(session)
+
+    def is_session_valid(self, session_id: str) -> bool:
+        try:
+            self.validate_session(session_id)
+            return True
+        except HTTPException:
+            return False

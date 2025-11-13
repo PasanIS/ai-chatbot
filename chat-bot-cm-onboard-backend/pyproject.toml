@@ -14,14 +14,10 @@ dependencies = [
     "langchain-openai>=0.3.35",
     "openai>=2.2.0",
     "langchain>=0.3.27",
-    "alembic>=1.16.5",
     "langgraph>=0.6.10",
     "ipython>=9.6.0",
     "cryptography>=46.0.3",
 ]
 
-[tool.setuptools]
-packages = ["app", "alembic"]
-
-#[tool.uv.scripts]
-#server = "uvicorn app.main:app --reload"
+[tools.uv.scripts]
+dev = "uvicorn app.main:app --reload" # run the app with: uv run dev

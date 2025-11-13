@@ -1,13 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes.chat import router as chat_router
-from app.api.routes.session import router as session_router
-# from app.core.database import engine, Base
+
+from app.db.dbconnection import create_tables
+from app.routers.chat import router as chat_router
+from app.routers.session import router as session_router
 from dotenv import load_dotenv
 
 
 load_dotenv()
-
 
 app = FastAPI(
     debug=True,
@@ -17,9 +17,11 @@ app = FastAPI(
 )
 
 
+@app.on_event("startup")
+def on_startup():
+    create_tables()
 
 
-# Allow CORS for frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
@@ -28,13 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(chat_router)
+app.include_router(session_router)
 
-# Create DB tables
-# Base.metadata.create_all(bind=engine)
-
-
-app.include_router(chat_router, prefix="", tags=["chat"])
-app.include_router(session_router, prefix="", tags=["session"])
+# app.include_router(chat_router, prefix="", tags=["chat"])
+# app.include_router(session_router, prefix="", tags=["session"])
 
 @app.get("/")
 def root():

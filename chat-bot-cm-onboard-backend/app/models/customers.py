@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, Text, DateTime, func, ForeignKey, DECIMAL
-from app.core.database import Base
+from sqlalchemy import Column, String, Text
+from app.db.dbconnection import Base
 
 
 class Customers(Base):
