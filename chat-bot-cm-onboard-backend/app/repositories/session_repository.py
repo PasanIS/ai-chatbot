@@ -1,0 +1,39 @@
+import uuid
+from datetime import datetime, timedelta
+from sqlalchemy.orm import Session as DBSession
+from app.core.config import settings
+from app.schemas.session import SessionCreate
+from app.models.session import Session as SessionModel
+from typing import Optional
+
+class SessionRepository:
+    def __init__(self, db: DBSession):
+        self.db = db
+
+    def create_session(self, session_data: SessionCreate) -> SessionModel:
+
+        # Creates a new session in the db.
+        session_id = str(uuid.uuid4())
+        expires_at = datetime.utcnow() + timedelta(hours=settings.SESSION_EXPIRE_HOURS)
+
+        new_session = SessionModel(
+            session_id=session_id,
+            ip_address=session_data.ip_address,
+            user_agent=session_data.user_agent,
+            expires_at=expires_at
+        )
+        self.db.add(new_session)
+        self.db.commit()
+        self.db.refresh(new_session)
+        return new_session
+
+    def get_session_by_id(self, session_id: str) -> Optional[SessionModel]:
+        if not session_id:
+            return None
+        return self.db.query(SessionModel).filter(SessionModel.session_id == session_id).first()
+
+    def update_session_activity(self, session: SessionModel) -> SessionModel:
+        session.last_active = datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(session)
+        return session
