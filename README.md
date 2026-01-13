@@ -1,6 +1,6 @@
 # CustomMinds AI Onboarding Chatbot 🤖
 
-This is my onboarding project as a trainee at CustomMinds AI. The goal is to build a chatbot that interacts with data stored in a MySQL database. It uses:
+The goal is to build a chatbot that interacts with data stored in a MySQL database. It uses:
 
 - 🧠 **LangChain** for conversational logic  
 - 🧩 **LangGraph** for agent workflows and stateful orchestration  
