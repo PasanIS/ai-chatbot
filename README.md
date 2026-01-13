@@ -1,4 +1,4 @@
-# CustomMinds AI Onboarding Chatbot 🤖
+# AI Chatbot 🤖
 
 The goal is to build a chatbot that interacts with data stored in a MySQL database. It uses:
 
